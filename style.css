@@ -1,0 +1,17 @@
+#gameContainer {
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    }
+
+#canvas {
+  margin-top: calc((100vh - 640px) / 2);
+}
+
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: black;
+}
+
