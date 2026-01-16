@@ -84,7 +84,7 @@ function clearVelocity(e) {
 
 function intializeGame() {
   global.bgScrollX = 0;
-  new BG("../assets/bg.png");
+  new BG("./assets/bg.png");
   ayana = new Ayana(300, 350);
   umbra = new Umbra(ayana);
 }
