@@ -20,7 +20,6 @@ function gameLoop(totalTime) {
     obj.draw();
   }
 
-  // edge-scroll ONCE per frame
   const leftEdge  = 200;
   const rightEdge = global.canvas.width - 200 - ayana.width;
   const topEdge = 300;
@@ -29,13 +28,13 @@ function gameLoop(totalTime) {
   if (ayana.x > rightEdge) {
     const dx = ayana.x - rightEdge;
     ayana.x = rightEdge;
-    global.bgScrollX += dx;
+    global.bgScrollX -= dx;
   }
 
   if (ayana.x < leftEdge) {
     const dx = ayana.x - leftEdge;
     ayana.x = leftEdge;
-    global.bgScrollX += dx;
+    global.bgScrollX -= dx;
   }
 
   if (ayana.y > bottomEdge) {
@@ -86,7 +85,7 @@ function clearVelocity(e) {
 function intializeGame() {
   global.bgScrollX = 0;
   new BG("../assets/bg.png");
-  ayana = new Ayana(10, 350);
+  ayana = new Ayana(300, 350);
   umbra = new Umbra(ayana);
 }
 
