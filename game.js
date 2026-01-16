@@ -1,5 +1,5 @@
 import { global } from "./global.js";
-import { BG } from "../gameObjects/bg.js";
+import { BG } from "./gameObjects/bg.js";
 import { Ayana } from "./gameObjects/ayana.js";
 import { Umbra } from "./gameObjects/umbra.js";
 
