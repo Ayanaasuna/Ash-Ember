@@ -1,5 +1,5 @@
 import { BaseGameObject } from "./baseGameObject.js";
-import { global } from "../global.js";
+import { global } from "./global.js";
 
 class BG extends BaseGameObject {
   constructor(imagePath) {
@@ -21,7 +21,7 @@ draw = function () {
   // shift left until first image is offscreen
   while (x > 0) x -= iw;
   while (x < -iw) x += iw;
-  
+
 // tiling (repeating image)
   ctx.drawImage(img, x, 0, iw + 0.5, ch);
   ctx.drawImage(img, x + iw, 0, iw + 0.5, ch);
