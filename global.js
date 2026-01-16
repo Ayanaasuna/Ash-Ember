@@ -7,6 +7,8 @@ global.deltaTime = 0;
 global.allGameObjects = [];
 global.playerFigure;
 global.bgScrollX = 0;
+global.keys = {};
+
 
 global.getCanvasBounds = function () {
     let bounds = {
