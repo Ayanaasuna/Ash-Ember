@@ -1,5 +1,5 @@
 import { BaseGameObject } from "./baseGameObject.js";
-import { global } from "./global.js";
+import { global } from "../global.js";
 
 class Umbra extends BaseGameObject {
   constructor(ayana) {
