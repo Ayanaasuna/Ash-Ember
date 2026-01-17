@@ -6,6 +6,8 @@ class DoorPuzzleBG extends BaseGameObject {
     super(x, 0, global.canvas.width, global.canvas.height, ["./assets/bgDoors.png"]);
     this.name = "DoorPuzzleBG";
     this.setAnimation(0, 0);
+    this.isWorldObject = true;
+
   }
 }
 

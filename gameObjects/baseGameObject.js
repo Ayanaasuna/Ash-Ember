@@ -12,6 +12,8 @@ class BaseGameObject {
     width = 0;
     height = 0;
     index = -1;
+    isWorldObject = false;
+
 
     animationData = {
         animationSprites: [],
@@ -43,9 +45,10 @@ class BaseGameObject {
         const img = this.animationData.animationSprites[nextSpriteIndex];
         if (!img || !img.complete || img.naturalWidth === 0) return;
 
-        const screenX = this.x + global.bgScrollX;
+        const screenX = this.isWorldObject ? (this.x + global.bgScrollX) : this.x;
         global.ctx.drawImage(img, screenX, this.y, this.width, this.height);
 }
+
 
 
     getNextSpriteIndex = function () {

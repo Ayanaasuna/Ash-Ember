@@ -6,6 +6,8 @@ class Candle extends BaseGameObject {
     this.name = "Candle";
     this.value = value;
     this.isOn = false;
+    this.isWorldObject = true;
+
 
     // start on off-frame
     this.setAnimation(0, 0);
