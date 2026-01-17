@@ -40,8 +40,13 @@ class BaseGameObject {
 
     draw = function () {
         let nextSpriteIndex = this.getNextSpriteIndex();
-        global.ctx.drawImage(this.animationData.animationSprites[nextSpriteIndex], this.x, this.y, this.width, this.height);
-    }
+        const img = this.animationData.animationSprites[nextSpriteIndex];
+        if (!img || !img.complete || img.naturalWidth === 0) return;
+
+        const screenX = this.x + global.bgScrollX;
+        global.ctx.drawImage(img, screenX, this.y, this.width, this.height);
+}
+
 
     getNextSpriteIndex = function () {
         let nextSpriteIndex = this.animationData.currentSpriteIndex;
