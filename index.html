@@ -13,9 +13,27 @@
   <!-- E.g. <div id="healthDisplay">Health:</div> -->
   <div id="gameContainer">
 
-    <canvas id="canvas" width="1152" height="640"></canvas>    <!-- further HTML elements, that should overlay your game. e.g. Main Screen, Game Over screen, .... -->
-    <!-- E.g. <div id="gameOverScreen"></div> -->
-    <!-- E.g. <div id="mainScreen"></div> -->
+<div id="startScreen" class="overlay">
+  <img src="./assets/start.png" id="Cover"/>
+  <img src="./assets/ashandember.png" id="Title"/>
+  <img src="./assets/ayanaaasuna.png" id="Name"/>
+
+  <button id="startBtn">Start</button>
+</div>
+
+<div id="gameOverScreen" class="overlay hidden">
+  <img src="./assets/gameover.png" alt="Game Over" id="gameOverImage"/>
+  <button id="restartBtn">Restart</button>
+</div>
+
+<div id="endScreen" class="overlay hidden">
+  <img src="./assets/end.png" alt="Game Completed" id="endImage"/>
+  <div id="aurevoirUmbra"></div>
+  <button id="playAgainBtn">Play Again</button>
+</div>
+
+<canvas id="canvas" width="1152" height="640"></canvas>
+
   </div>
   <!-- further HTML elements, that should maybe be displayed below your game. E.g. Score, .... -->
   <!-- E.g. <div id="scoreDisplay">Score: </div> -->

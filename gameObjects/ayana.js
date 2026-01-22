@@ -12,14 +12,11 @@ class Ayana extends BaseGameObject {
 
     this.name = "Ayana";
 
-    // idle image
     this.idleImage = new Image();
     this.idleImage.src = "./assets/ayana.png";
 
-    // split both walking sheets into frames
     this.useImagesAsSpritesheet(4, 1);
 
-    // start facing right
     this.setAnimation(0, 3);
   }
 

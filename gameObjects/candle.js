@@ -7,14 +7,11 @@ class Candle extends BaseGameObject {
     this.value = value;
     this.isOn = false;
     this.isWorldObject = true;
-
-
-    // start on off-frame
+    this.collisionTime = 0;
     this.setAnimation(0, 0);
   }
 
   update = function () {
-    // choose which sprite to draw
     if (this.isOn) this.setAnimation(1, 1);
     else this.setAnimation(0, 0);
   }

@@ -50,16 +50,14 @@ class BaseGameObject {
 }
 
 
-
-    getNextSpriteIndex = function () {
-        let nextSpriteIndex = this.animationData.currentSpriteIndex;
-        
-        this.animationData.currentSpriteElapsedTime += global.deltaTime;
+getNextSpriteIndex = function () {
+    let nextSpriteIndex = this.animationData.currentSpriteIndex;
+    this.animationData.currentSpriteElapsedTime += global.deltaTime;
         
         if (this.animationData.currentSpriteElapsedTime >= this.animationData.timePerSprite) {
             this.animationData.currentSpriteIndex++;
-            if (this.animationData.currentSpriteIndex > this.animationData.lastSpriteIndex) {
-                this.animationData.currentSpriteIndex = this.animationData.firstSpriteIndex;
+        if (this.animationData.currentSpriteIndex > this.animationData.lastSpriteIndex) {
+            this.animationData.currentSpriteIndex = this.animationData.firstSpriteIndex;
             }
             this.animationData.currentSpriteElapsedTime = 0;
         }
