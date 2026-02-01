@@ -5,26 +5,41 @@ class CandlePuzzle {
     this.ayana = ayana;
     this.candles = candles;
 
-    this.toggleDelay = 0.5;
-    this.nearX = 70;
-    this.nearY = 10;
+    this.toggleDelay = 0.5; // toggles candle after 0.5s collision
+    this.nearX = 70; //horizontal distance for collision
+    this.nearY = 10; // vertical distance for collision
 
-    this.correctOrder = [0, 2, 3];
+    this.correctOrder = [0, 2, 3]; //candle array that should be on
     this.solved = false;
   }
 
-  isNear(c) {
-    const ax = this.ayana.x - global.bgScrollX;
+  isNear(candle) {
+  // Ayana center in world X
+  const ayanaX = this.ayana.x - global.bgScrollX + this.ayana.width / 2;
+  const ayanaY = this.ayana.y + 80;
 
-    const tw = 14, th = 14;
-    const tx = ax + this.ayana.width * 0.5 - tw / 2;
-    const ty = this.ayana.y + 80;
+  // small interaction box around Ayana
+  const boxSize = 14;
+  const boxLeft   = ayanaX - boxSize / 2;
+  const boxRight  = boxLeft + boxSize;
+  const boxTop    = ayanaY;
+  const boxBottom = boxTop + boxSize;
 
-    const cx = c.x, cy = c.y, cw = c.width, ch = c.height;
+  // candle bounds
+  const candleLeft   = candle.x;
+  const candleRight  = candle.x + candle.width;
+  const candleTop    = candle.y;
+  const candleBottom = candle.y + candle.height;
 
-    return (tx < cx + cw && tx + tw > cx && ty < cy + ch && ty + th > cy);
-  }
+  return (
+    boxLeft < candleRight &&
+    boxRight > candleLeft &&
+    boxTop < candleBottom &&
+    boxBottom > candleTop
+  );
+}
 
+  // check if puzzle is solved
   isSolved() {
     for (let i = 0; i < this.candles.length; i++) {
       const shouldBeOn = this.correctOrder.includes(i);
@@ -36,42 +51,50 @@ class CandlePuzzle {
   update() {
     if (this.solved) return;
 
-    for (const c of this.candles) {
-      if (this.isNear(c)) {
-        if (c.collisionTime >= 0) c.collisionTime += global.deltaTime;
+    // check each candle for collision
+    for (const candle of this.candles) {
+      const near = this.isNear(candle);
 
-        if (c.collisionTime >= this.toggleDelay) {
-          c.isOn = !c.isOn;
-          c.collisionTime = -1;
-        }
-      } else {
-        c.collisionTime = 0;
+      if (!near) {
+        candle.collisionTime = 0;
+        continue;
+      }
+
+      // already toggled when near
+      if (candle.collisionTime < 0) continue;
+
+      candle.collisionTime += global.deltaTime;
+
+      if (candle.collisionTime >= this.toggleDelay) {
+        candle.isOn = !candle.isOn;
+        candle.collisionTime = -1; // prevent further toggling until Ayana moves away 
       }
     }
 
     if (this.isSolved()) {
       this.solved = true;
-      console.log("SOLVED!");
     }
   }
 
+
   draw() {
-    if (!this.candles || this.candles.length === 0) return;
+    if (!this.candles?.length) return;
 
-    const left = this.candles[0].x;
-    const right = this.candles[this.candles.length - 1].x + this.candles[this.candles.length - 1].width;
-    const centerWorldX = (left + right) / 2;
+    // get all candles to determine center position
+    const first = this.candles[0];
+    const last = this.candles[this.candles.length - 1];
 
-    const topY = this.candles[0].y - 220;
-
+    const centerWorldX = (first.x + (last.x + last.width)) / 2;
     const screenX = centerWorldX + global.bgScrollX;
+    const y = first.y - 220; //text height
 
-    global.ctx.font = "bold 25px Georgia";
-    global.ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-    global.ctx.textAlign = "center";
-    global.ctx.fillText("XI", screenX, topY);
-
-    global.ctx.textAlign = "left";
+    // draw text above candles
+    const ctx = global.ctx;
+    ctx.font = "bold 25px Georgia";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+    ctx.textAlign = "center";
+    ctx.fillText("XI", screenX, y);
+    ctx.textAlign = "left";
   }
 }
 

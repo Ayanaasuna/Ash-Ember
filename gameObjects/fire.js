@@ -11,7 +11,7 @@ class Fire extends BaseGameObject {
     this.ayana = ayana;
     this.onGameOver = onGameOver;
 
-    this.sheet = this.animationData.animationSprites[0];
+    this.spriteSheet = this.animationData.animationSprites[0];
 
     this.frameW = 993;
     this.frameH = 400;
@@ -22,43 +22,44 @@ class Fire extends BaseGameObject {
 
     this.meter = 0;
 
+    // charging parameters of progress bar
     this.fillIdle = 0.04;
     this.fillRight = 0.03;
     this.fillLeft = 0.04;
 
-    this.chargeDrainRight = 0.06;
+    this.chargeDrainRight = 0.06; // moving away from fire, farther away
     this.chargeDrainIdle = 0.01;
 
-    this.state = "CHARGING";
+    this.state = "charging"; // "charging" or "active"
 
-    this.fireSpeedBase = 50;
-    this.fireSpeedCatch = 50;
+    this.fireSpeedBase = this.fireSpeedCatch = 50; // pixels per second speed
 
-    this.fireX = 0;
+    this.fireX = 0; // world X position of fire
 
     this.frame = 0;
     this.frameTimer = 0;
     this.frameFps = 10;
 
-    this.killInsetFromFront = 100;
+    // kill box parameters for collision with Ayana
+    this.killFront = 100;
     this.killWidth = 200;
-    this.killTopInset = 80;
+    this.killTop = 80;
     this.killHeight = 320;
 
-    this.lastWorldX = this.getAyanaWorldX();
+    this.lastWorldX = this.getAyanaWorldX(); // to track Ayana movement
     this.spawnedOnce = false;
 
-    this.meterNearDist = 120;
-    this.meterFarDist = 1400;
+    this.meterDistance = 1400; // distance of the fire from the screen to start filling meter 
 
-    this.meterRiseSpeed = 1.5;
-    this.meterFallSpeed = 0.1;
+    this.meterRiseSpeed = 1.5; 
+    this.meterFallSpeed = 0.1; 
   }
 
   getAyanaWorldX() {
-    return this.ayana.x - global.bgScrollX;
+    return this.ayana.x - global.bgScrollX; // convert screen X to world X
   }
 
+  // Get Ayana's bounding box in world coordinates
   getAyanaWorldBox() {
     const ax = this.getAyanaWorldX();
     return {
@@ -70,32 +71,33 @@ class Fire extends BaseGameObject {
   }
 
   getScreenX() {
-    return this.fireX + global.bgScrollX;
+    return this.fireX + global.bgScrollX; // convert world X to screen X
   }
 
+  // Check if fire is on screen
   isOnScreen() {
-    const sx = this.getScreenX();
-    return (sx < global.canvas.width) && (sx + this.width > 0);
+    const left = this.getScreenX();
+    const right = left + this.width;
+    return right > 0 && left < global.canvas.width;
   }
 
-  rectsOverlap(a, b) {
-    return (
-      a.right >= b.left &&
-      a.left <= b.right &&
-      a.bottom >= b.top &&
-      a.top <= b.bottom
-    );
+  // Check if two boxes overlap (Ayana and kill box)
+  collisionDetect(a, b) {
+    const overlapX = a.left <= b.right && a.right >= b.left;
+    const overlapY = a.top <= b.bottom && a.bottom >= b.top;
+    return overlapX && overlapY;
   }
 
+  // makes the kill box for the fire
   getKillBox() {
-    const frontX = this.fireX + this.width;
-    const right = frontX - this.killInsetFromFront;
+    const right = this.fireX + this.width - this.killFront;
     const left = right - this.killWidth;
-    const top = this.y + this.killTopInset;
+    const top = this.y + this.killTop;
     return { left, right, top, bottom: top + this.killHeight };
   }
 
-  updateMeterFromDistance(ax) {
+  // If fire on screen, fill meter full 
+  updateMeterFromDistance() {
     if (this.isOnScreen()) {
       this.meter = 1;
       return;
@@ -103,19 +105,20 @@ class Fire extends BaseGameObject {
 
     const frontScreenX = (this.fireX + this.width) + global.bgScrollX;
 
-    let target = (frontScreenX + this.meterFarDist) / this.meterFarDist;
+    let target = (frontScreenX + this.meterDistance) / this.meterDistance;
     target = Math.max(0, Math.min(0.99, target));
 
     const speed = target > this.meter ? this.meterRiseSpeed : this.meterFallSpeed;
     this.meter += (target - this.meter) * speed * global.deltaTime;
   }
 
-  activate(ax) {
-    this.state = "ACTIVE";
+  // When meter is full, activate fire
+  activate() {
+    this.state = "active";
 
     this.y = global.canvas.height - this.height;
 
-    const leftScreenX = -this.width + 40;
+    const leftScreenX = -this.width + 40; // slightly off screen to left fire spawn
     this.fireX = (leftScreenX - global.bgScrollX);
 
     this.frame = 0;
@@ -123,24 +126,26 @@ class Fire extends BaseGameObject {
 
     this.spawnedOnce = true;
 
-    this.updateMeterFromDistance(ax);
+    this.updateMeterFromDistance();
   }
 
+  // If fire goes off screen, reset it
   reset() {
-    this.state = "CHARGING";
+    this.state = "charging";
     this.meter = 0;
     this.frame = 0;
     this.frameTimer = 0;
   }
 
+  // Uses Ayana's movement to charge the meter. When active, moves/animates fire and checks collision/reset
   update = function () {
     const ax = this.getAyanaWorldX();
-
     const dx = ax - this.lastWorldX;
     this.lastWorldX = ax;
 
-    if (this.state === "CHARGING") {
+    if (this.state === "charging") {
       let delta = this.fillIdle;
+
       if (dx > 0.5) delta = this.fillRight;
       if (dx < -0.5) delta = this.fillLeft;
 
@@ -149,65 +154,68 @@ class Fire extends BaseGameObject {
       if (dx > 0.5) this.meter -= this.chargeDrainRight * global.deltaTime;
       if (Math.abs(dx) <= 0.5) this.meter -= this.chargeDrainIdle * global.deltaTime;
 
-      this.meter = Math.max(0, Math.min(1, this.meter));
+      if (this.meter < 0) this.meter = 0;
+      if (this.meter > 1) this.meter = 1;
 
-      if (this.meter >= 1) this.activate(ax);
+      if (this.meter >= 1) this.activate();
       return;
     }
 
-    const playerSpeed = Math.abs(dx) / Math.max(global.deltaTime, 0.0001);
-    const speed = this.fireSpeedBase + Math.max(0, this.fireSpeedCatch - playerSpeed);
-    this.fireX += speed * global.deltaTime;
+    let dt = global.deltaTime;
+    if (dt <= 0) dt = 0.0001;
+
+    const playerSpeed = Math.abs(dx) / dt;
+
+    let bonus = this.fireSpeedCatch - playerSpeed;
+    if (bonus < 0) bonus = 0;
+
+    this.fireX += (this.fireSpeedBase + bonus) * global.deltaTime;
 
     this.frameTimer += global.deltaTime;
     const stepTime = 1 / this.frameFps;
+
     while (this.frameTimer >= stepTime) {
       this.frameTimer -= stepTime;
       this.frame = (this.frame + 1) % this.totalFrames;
     }
 
-    this.updateMeterFromDistance(ax);
+    this.updateMeterFromDistance();
 
-    const ayBox = this.getAyanaWorldBox();
-    const killBox = this.getKillBox();
-    if (this.rectsOverlap(ayBox, killBox)) {
+    if (this.collisionDetect(this.getAyanaWorldBox(), this.getKillBox())) {
       if (this.onGameOver) this.onGameOver();
     }
 
-    const sx = this.getScreenX();
-    if (this.spawnedOnce && sx > global.canvas.width + 50) {
+    if (this.spawnedOnce && this.getScreenX() > global.canvas.width + 50) {
       this.reset();
       return;
     }
   };
 
+  //draw fire sprite 
   draw = function () {
-    if (this.state !== "ACTIVE") return;
-    if (!this.sheet || !this.sheet.complete || this.sheet.naturalWidth === 0) return;
+    if (this.state !== "active") return;
+    if (!this.spriteSheet || !this.spriteSheet.complete || this.spriteSheet.naturalWidth === 0) return;
 
     const sx = this.getScreenX();
-    const srcX = this.frame * this.frameW;
-
-    const srcCropX = srcX + this.cropLeft;
-    const srcCropW = this.frameW - this.cropLeft - this.cropRight;
+    const srcX = this.frame * this.frameW + this.cropLeft;
+    const srcW = this.frameW - this.cropLeft - this.cropRight;
 
     const dstX = sx + this.cropLeft;
     const dstW = this.width - this.cropLeft - this.cropRight;
 
     global.ctx.drawImage(
-      this.sheet,
-      srcCropX, 0, srcCropW, this.frameH,
+      this.spriteSheet,
+      srcX, 0, srcW, this.frameH,
       dstX, this.y, dstW, this.height
     );
   };
 
-  drawHUD = function () {
+  // draw fire meter
+  drawFireMeter = function () {
     const ctx = global.ctx;
+    const x = 20, y = 20, w = 170, h = 18, r = 9;
 
-    const x = 20, y = 20, w = 170, h = 18;
-    const r = 9;
-
-    function roundRectPath(px, py, pw, ph, pr) {
+    function rr(px, py, pw, ph, pr) {
       ctx.beginPath();
       ctx.moveTo(px + pr, py);
       ctx.lineTo(px + pw - pr, py);
@@ -223,16 +231,16 @@ class Fire extends BaseGameObject {
 
     ctx.save();
 
-    roundRectPath(x, y, w, h, r);
+    rr(x, y, w, h, r);
     ctx.fillStyle = "rgba(0,0,0,0.55)";
     ctx.fill();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.strokeStyle = "rgba(0,0,0,0.8)";
     ctx.stroke();
 
-    const fillW = Math.max(0, Math.min(1, this.meter)) * (w - 6);
-    roundRectPath(x + 3, y + 3, fillW, h - 6, r - 3);
-    ctx.fillStyle = "rgba(140, 0, 0, 0.8)";
+    const fillW = this.meter * (w - 6);
+    rr(x + 3, y + 3, fillW, h - 6, r - 3);
+    ctx.fillStyle = "rgba(140,0,0,0.8)";
     ctx.fill();
 
     ctx.restore();

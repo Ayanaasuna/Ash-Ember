@@ -13,7 +13,7 @@ class Umbra extends BaseGameObject {
     this.animationData.timePerSprite = 0.08;
 
     this.time = 0;
-    this.side = -1; // start on right side of Ayana
+    this.side = -1; // start left side
 
      // bubble
     this.bubbleImg = new Image();
@@ -23,7 +23,7 @@ class Umbra extends BaseGameObject {
     this.sayTimer = 0;
   }
 
-  // call this to make Umbra talk
+  // function to make umbra talk
   say(text, seconds = 3) {
     this.sayText = text;
     this.sayTimer = seconds;
@@ -32,14 +32,15 @@ class Umbra extends BaseGameObject {
   update = function () {
     this.time += global.deltaTime;
 
-    if (this.ayana.xVelocity > 0) this.side = -1;
-    if (this.ayana.xVelocity < 0) this.side = 1;
+    if (this.ayana.xVelocity > 0) this.side = -1; // left side
+    if (this.ayana.xVelocity < 0) this.side = 1;  // right side
 
-    const party = Math.sin(this.time * 8) * 20;
+    const party = Math.sin(this.time * 8) * 20; // weird math that i dont understand but it makes umbra go up and down yay
 
-    const targetX = this.ayana.x + this.side * 70;
-    const targetY = this.ayana.y - 70 + party;
+    const targetX = this.ayana.x + this.side * 70; // side offset
+    const targetY = this.ayana.y - 70 + party; // above offset + party
 
+    // delayed flying 
     const delay = 1.5;
     this.x += (targetX - this.x) * delay * global.deltaTime;
     this.y += (targetY - this.y) * delay * global.deltaTime;
@@ -47,38 +48,45 @@ class Umbra extends BaseGameObject {
     if (this.sayTimer > 0) {
       this.sayTimer -= global.deltaTime;
       if (this.sayTimer <= 0) {
-        this.sayTimer = 0;
         this.sayText = "";
+        this.sayTimer = 0;
       }
     }
   };
 
 draw = function () {
-  const img = this.animationData.animationSprites[this.getNextSpriteIndex()];
-  if (!img || !img.complete || !this.bubbleImg.complete) return;
+  const ctx = global.ctx;
 
-  const x = this.isWorldObject ? this.x + global.bgScrollX : this.x;
-  global.ctx.drawImage(img, x, this.y, this.width, this.height);
+  const img = this.animationData.animationSprites[this.getNextSpriteIndex()];
+  if (!img || !img.complete) return; //stop if image not loaded
+
+  let x = this.x;
+
+  if (this.isWorldObject) {
+    x += global.bgScrollX;
+  }
+
+  ctx.drawImage(img, x, this.y, this.width, this.height);
+
 
   if (!this.sayText) return;
+  if (!this.bubbleImg.complete) return;
 
+  // bubble position
   const bx = x + 90;
   const by = this.y - 95;
 
-  global.ctx.drawImage(this.bubbleImg, bx, by, 220, 90);
-  global.ctx.fillStyle = "black";
-  global.ctx.font = "16px Arial";
+  ctx.drawImage(this.bubbleImg, bx, by, 220, 90);
+  ctx.fillStyle = "black";
+  ctx.font = "16px Arial";
 
-  const lines = Array.isArray(this.sayText)
-    ? this.sayText
-    : String(this.sayText).split("\n");
+  const lines = this.sayText.split("\n");
 
   for (let i = 0; i < lines.length; i++) {
-    global.ctx.fillText(lines[i], bx + 20, by + 25 + i * 18);
+    ctx.fillText(lines[i], bx + 20, by + 25 + i * 18);
   }
 
 };
-
 
 }
 

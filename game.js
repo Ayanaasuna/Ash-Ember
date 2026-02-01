@@ -38,12 +38,13 @@ let fire;
 let showNarration = false;
 let narrationTimer = 0;
 let narrationDuration = 0;
-let narrationLines = [];
+let narrationLines = []; 
 let narrationOnDone = null;
 
 let gameOver = false;
 let gameStarted = false;
 
+// triggered by fire collision
 function triggerGameOver() {
   if (!gameStarted) return;
   if (gameOver) return;
@@ -87,14 +88,14 @@ function startEnding() {
       endFrame = 0;
       endTimer = 0;
 
-      if (fire) fire.active = false;
+      if (fire) fire.active = false; // stop fire updates
 
       if (ayana) {
-        ayana.active = false;
+        ayana.active = false; // stop Ayana updates
         ayana.xVelocity = 0;
         ayana.yVelocity = 0;
       }
-      if (umbra) umbra.active = false;
+      if (umbra) umbra.active = false; // stop Umbra updates
     }
   );
 }
@@ -104,8 +105,8 @@ function endEnding() {
   music.pause();
 
   const lines =
-    (endChoice === "FIRE") ? endingTextFire :
-    (endChoice === "SLEEP") ? endingTextSleep :
+    (endChoice === "fireOn") ? endingTextFireOn :
+    (endChoice === "fireOff") ? endingTextFireOff :
     null;
 
   if (lines) {
@@ -175,13 +176,13 @@ const cutNarrations = [
   }
 ];
 
-const endingTextFire = [
+const endingTextFireOn = [
   "The flame accepts your offering.",
   "It changes you as it grows.",
   "What remains is light and ash."
 ];
 
-const endingTextSleep = [
+const endingTextFireOff = [
   "You let the fire rest.",
   "Umbra thins with the last ember,",
   "and the chaos falls silent in the dark."
@@ -230,32 +231,35 @@ function gameLoop(totalTime) {
     return;
   }
 
+  // story text display, pause gameplay
   if (showNarration) {
     narrationTimer += global.deltaTime;
     drawNarration(narrationLines);
 
     if (narrationTimer >= narrationDuration) {
       showNarration = false;
-      const cb = narrationOnDone;
+      if (narrationOnDone) narrationOnDone();
       narrationOnDone = null;
-      if (cb) cb();
     }
 
     requestAnimationFrame(gameLoop);
     return;
   }
 
+  //plays intro cutscene
   if (playingCutscene) {
     if (!cutImg.complete || cutImg.naturalWidth === 0) {
       requestAnimationFrame(gameLoop);
       return;
     }
 
+    // update cutscene frame
     cutTimer += global.deltaTime;
     if (cutTimer >= cutFrameTime) {
       cutTimer = 0;
       cutFrame++;
 
+      // at specific frames, show narration
       for (const n of cutNarrations) {
         if (cutFrame === n.frame) {
           startNarration(n.lines, n.time);
@@ -263,11 +267,13 @@ function gameLoop(totalTime) {
         }
       }
 
+      // end cutscene when last frame reached
       if (cutFrame >= cutFrames) {
         endCutscene();
       }
     }
 
+    // draw current cutscene frame from sprite sheet
     const sx = cutFrame * frameW;
     global.ctx.drawImage(
       cutImg,
@@ -275,6 +281,7 @@ function gameLoop(totalTime) {
       0, 0, frameW, frameH
     );
 
+    // draw skip text
     global.ctx.font = "16px Arial";
     global.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     global.ctx.textAlign = "right";
@@ -288,49 +295,58 @@ function gameLoop(totalTime) {
     return;
   }
 
+
+  // plays ending cutscene
   if (playingEnd) {
     global.ctx.clearRect(0, 0, global.canvas.width, global.canvas.height);
     global.ctx.fillStyle = "black";
     global.ctx.fillRect(0, 0, global.canvas.width, global.canvas.height);
 
+    // wait for end image to load
     if (!endA.complete || endA.naturalWidth === 0) {
       requestAnimationFrame(gameLoop);
       return;
     }
 
+    // animate ending frames speed
     endTimer += global.deltaTime;
     if (endTimer >= endFrameTime) {
       endTimer = 0;
 
+      // as long no choice made, loop certain frames
       if (endChoice === null) {
         if (endFrame < endLoopFrom) endFrame++;
         else if (endFrame < endLoopTo) endFrame++;
         else endFrame = endLoopFrom;
       } else {
-        endFrame++;
+        endFrame++; // if choice made, play to end
       }
     }
 
     const framesA = Math.max(1, Math.floor(endA.naturalWidth / frameW));
     const framesB = (endB.complete && endB.naturalWidth > 0) ? Math.max(1, Math.floor(endB.naturalWidth / frameW)) : 0;
 
+    // determine which image to use based on choice, A default
     let img = endA;
     let maxFrames = framesA;
 
-    if (endChoice === "SLEEP" && endFrame >= endBranchFrame && framesB > 0) {
+    if (endChoice === "fireOff" && endFrame >= endBranchFrame && framesB > 0) {
       img = endB;
       maxFrames = framesB;
     }
 
+    // end cutscene when last frame reached
     if (endFrame >= maxFrames) {
       endEnding();
       requestAnimationFrame(gameLoop);
       return;
     }
 
+    // draw current ending frame
     const sx = endFrame * frameW;
     global.ctx.drawImage(img, sx, 0, frameW, frameH, 0, 0, frameW, frameH);
 
+    // draw choice text during bubble frames
     if (endFrame >= endBubbleFrom && endFrame <= endBubbleTo) {
       global.ctx.fillStyle = "black";
       global.ctx.font = "16px Arial";
@@ -339,6 +355,7 @@ function gameLoop(totalTime) {
       global.ctx.fillText("alive or let it rest?", global.canvas.width / 2 + 140, 260);
     }
 
+    // if choice not made yet, draw the two options
     if (endChoice === null) {
       global.ctx.font = "bold 25px Georgia";
       global.ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
@@ -355,15 +372,19 @@ function gameLoop(totalTime) {
     return;
   }
 
+  // freeze game on game over (shows game over screen)
   if (gameOver) {
     return;
   }
 
+  // clear canvas for normal gameplay
   global.ctx.clearRect(0, 0, global.canvas.width, global.canvas.height);
 
+  // updates puzzle logic
   if (candlePuzzle) candlePuzzle.update();
   if (doorPuzzle) doorPuzzle.update();
 
+  // if candle puzzle solved, open gate1
   if (candlePuzzle && candlePuzzle.solved && gate1 && !gate1.isOpen) {
     gate1.open();
   }
@@ -375,29 +396,36 @@ function gameLoop(totalTime) {
     obj.draw();
   }
 
+  // keep Ayana within screen bounds and scroll background
   const leftEdge  = 250;
   const rightEdge = global.canvas.width - 250 - ayana.width;
   const topEdge = 300;
   const bottomEdge = global.canvas.height - 20 - ayana.height;
-  const ayanaWorldX = ayana.x - global.bgScrollX;
 
+
+  const ayanaWorldX = ayana.x - global.bgScrollX; // Ayana's position in the world
+
+  // scroll background if Ayana goes beyond right edge
   if (ayana.x > rightEdge) {
     const dx = ayana.x - rightEdge;
     ayana.x = rightEdge;
     global.bgScrollX -= dx;
   }
 
+  // scroll background if Ayana goes beyond left edge
   if (ayana.x < leftEdge) {
     const dx = ayana.x - leftEdge;
     ayana.x = leftEdge;
     global.bgScrollX -= dx;
   }
 
+  // vertical walking bounds "floor"
   if (ayana.y > bottomEdge) ayana.y = bottomEdge;
   if (ayana.y < topEdge) ayana.y = topEdge;
 
 
 
+  // if Ayana reaches certain X positions, Umbra speaks
   if (!text1 && ayanaWorldX > 600) {
     umbra.say("Do you follow order,\nor hide inside it?", 2);
     text1 = true;
@@ -418,6 +446,8 @@ function gameLoop(totalTime) {
     textDoor = true;
   }
 
+
+  // collision with gates to block Ayana
   const ax = ayanaWorldX;
 
   function blockGate(g) {
@@ -428,15 +458,19 @@ function gameLoop(totalTime) {
     }
   }
 
+  //both gates
   blockGate(gate1);
   blockGate(gate2);
 
-  if (fire) fire.drawHUD();
+  // fire and candles are drawn last to appear on top
+  if (fire) fire.drawFireMeter();
   if (candlePuzzle) candlePuzzle.draw();
 
   requestAnimationFrame(gameLoop);
 }
 
+
+// movement controls
 function setVelocity(e) {
   switch (e.key) {
     case "d":
@@ -462,6 +496,7 @@ function setVelocity(e) {
   }
 }
 
+// skip cutscene with keys
 document.addEventListener("keydown", (e) => {
   if (!playingCutscene) return;
   if (e.key === " " || e.key === "Enter" || e.key === "Escape") {
@@ -469,6 +504,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// track key states
 document.addEventListener("keydown", (e) => {
   global.keys[e.key.toLowerCase()] = true;
 });
@@ -477,12 +513,14 @@ document.addEventListener("keyup", (e) => {
   global.keys[e.key.toLowerCase()] = false;
 });
 
+
+// ending choice input, while no choice animation loops
 document.addEventListener("keydown", (e) => {
   if (!playingEnd) return;
   if (endChoice !== null) return;
 
-  if (e.key === "1") endChoice = "FIRE";
-  if (e.key === "2") endChoice = "SLEEP";
+  if (e.key === "1") endChoice = "fireOn";
+  if (e.key === "2") endChoice = "fireOff";
 
   if (endChoice !== null && endFrame < endHoldFrame) {
     endFrame = endHoldFrame;
@@ -490,6 +528,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// keys released to stop movement
 function clearVelocity(e) {
   if (["a","w","s","d"].includes(e.key)) {
     ayana.xVelocity = 0;
@@ -498,12 +537,13 @@ function clearVelocity(e) {
 }
 
 function intializeGame() {
-  global.bgScrollX = 0;
+  global.bgScrollX = 0; // world starts at 0
 
-  new BG("./assets/bg.png");
+  new BG("./assets/bg.png"); // updated every frame for scroll
 
-  doorsBG = new DoorPuzzleBG(4400);
+  doorsBG = new DoorPuzzleBG(4400); // door bg for puzzle 
 
+  // binary candles in a row
   candles = [
     new Candle(2190, 370, 8),
     new Candle(2260, 370, 4),
@@ -511,16 +551,17 @@ function intializeGame() {
     new Candle(2400, 370, 1),
   ];
 
-  ayana = new Ayana(300, 350);
-  umbra = new Umbra(ayana);
+  ayana = new Ayana(300, 350); // start position of Ayana
+  umbra = new Umbra(ayana); // Umbra linked to Ayana
 
-  doorPuzzle = new DoorPuzzle(ayana, umbra, doorsBG, startEnding);
-  candlePuzzle = new CandlePuzzle(ayana, candles);
+  doorPuzzle = new DoorPuzzle(ayana, umbra, doorsBG, startEnding); // door puzzle controller 
+  candlePuzzle = new CandlePuzzle(ayana, candles); // candle puzzle controller
 
+  // gate positions
   gate1 = new Gate(2600, 0);
   gate2 = new Gate(5700, 0, 44, 640, false);
 
-  fire = new Fire(ayana, triggerGameOver);
+  fire = new Fire(ayana, triggerGameOver); // creates fire & logic, collision triggers game over
 }
 
 intializeGame();

@@ -13,8 +13,8 @@ class Gate extends BaseGameObject {
   }
 
   open() {
-    if (!this.canOpen) return; // permanent gate ignores open()
-    this.isOpen = true;
+    if (!this.canOpen) return; // permanent gate
+    this.isOpen = true; // moving gate
   }
 
   update = function () {
